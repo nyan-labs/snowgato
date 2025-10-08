@@ -1,7 +1,0 @@
-topic: winter+loneliness
-genre: puzzle
-  - gimmick: drawing
-
-artstyle: pixel or hand-drawn (like pencil)
-
-credit: weinermaster14 for ideas
