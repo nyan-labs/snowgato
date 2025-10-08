@@ -1,0 +1,7 @@
+.DS_Store
+
+.vscode
+export
+
+# krita previous version bs
+*.*~
