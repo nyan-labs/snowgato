@@ -31,15 +31,26 @@ class Game extends FlxState {
 
     bgColor = 0xff000000; //0xff0f0915
 
-    level = new core.TiledLevel("assets/levels/tutorial.tmx", this); 
+		var level_name = "tutorial";
+		var path = 'assets/levels/${level_name}';
 
-		add(level.background_layer);
+		level = new core.TiledLevel('${path}/level.tmx', this);
+
+		var script = openfl.Assets.getText('${path}/level.hx');
+
+		var interp = new hscript.Interp();
+		var parser = new hscript.Parser();
+
+		interp.variables.set("FlxG", FlxG);
+
+		var ast = parser.parseString(script);
+		interp.execute(ast);
+
+		add(level.tiles);
 
 		add(level.images_layer);
 
 		add(level.objects_layer);
-
-		add(level.foreground_tiles);
 
     HUD = new DirectionalLayout();
     HUD.anchor = true;

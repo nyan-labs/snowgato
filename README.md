@@ -3,6 +3,10 @@ made in Haxe+HaxeFlixel\
 it is a puzzle game,\
 yeah 
 
+# setup
+1. install [Haxe](https://haxe.org/download)
+2. install [HaxeFlixel](https://haxeflixel.com/documentation/install-haxeflixel)
+
 # contributions
 feel free i don't mind!!!\
 but i would appreciate if you followed these **code guidelines**:

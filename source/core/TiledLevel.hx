@@ -8,6 +8,7 @@ import flixel.addons.editors.tiled.TiledImageLayer;
 import flixel.addons.editors.tiled.TiledImageTile;
 import flixel.addons.editors.tiled.TiledLayer.TiledLayerType;
 import flixel.addons.editors.tiled.TiledLayer;
+import flixel.addons.editors.tiled.TiledMap.FlxTiledMapAsset;
 import flixel.addons.editors.tiled.TiledMap;
 import flixel.addons.editors.tiled.TiledObject;
 import flixel.addons.editors.tiled.TiledObjectLayer;
@@ -35,29 +36,23 @@ import utils.IsTouching.Touching;
  * @author Samuel Batista
  * @edit qzip
 */
-class TiledLevel extends TiledMap {
-	// For each "Tile Layer" in the map, you must define a "tileset" property which contains the name of a tile sheet image
-	// used to draw tiles in that layer (without file extension). The image file must be located in the directory specified bellow.
-	inline static var c_PATH_LEVEL_TILESHEETS = "assets/spritesheets/";
-
-	// Array of tilemaps used for collision
-	public var foreground_tiles:FlxGroup;
-	public var objects_layer:FlxGroup;
-	public var background_layer:FlxGroup;
+class TiledLevel extends TiledMapExt {
+	public var tiles: FlxGroup;
+	/** special objects that do a specific function depending on their `class`/`type`, doesn't follow a strict grid */
+	public var objects_layer: FlxGroup;
 
 	public var collidable_tile_layers:Array<FlxTilemap>;
 	public var collidable_objects:FlxTypedGroup<SpriteExt>;
 
-	// Sprites of images layers
+	/** images, doesn't follow a strict grid */
 	public var images_layer:FlxGroup;
 
 	public function new(tiled_level:FlxTiledMapAsset, state: states.Game) {
 		super(tiled_level);
+		tiles = new FlxGroup();
 
 		images_layer = new FlxGroup();
-		foreground_tiles = new FlxGroup();
 		objects_layer = new FlxGroup();
-		background_layer = new FlxGroup();
 
 		collidable_tile_layers = new Array<FlxTilemap>();
 		collidable_objects = new FlxTypedGroup<SpriteExt>();
@@ -69,58 +64,80 @@ class TiledLevel extends TiledMap {
 		for(layer in layers) {
 			if(layer.type != TiledLayerType.TILE) continue;
 			var tile_layer: TiledTileLayer = cast layer;
+			
+			var tilemaps: Map<Int, FlxTilemapExt> = new Map();
 
-			var tile_sheetname: String = tile_layer.properties.get("tileset");
-
-			if(tile_sheetname == null) throw '"tileset" property not defined for the "${tile_layer.name}" layer. Please add the property to the layer.';
-
-			var tile_set: TiledTileSet = null;
-			for(ts in tilesets) {
-				if(ts.name == tile_sheetname) {
-					tile_set = ts;
-					break;
-				}
-			}
-
-			if(tile_set == null) throw 'tileset "${tile_sheetname}" not found. Did you misspell the "${tile_set}" property in "${tile_layer.name}" layer?';
-
-			var image_path = new Path(tile_set.imageSource);
-			var stylesheet_path = c_PATH_LEVEL_TILESHEETS + image_path.file + "." + image_path.ext;
-
-			// could be a regular FlxTilemap if there are no animated tiles
-			var tilemap = new FlxTilemapExt();
-			tilemap.loadMapFromArray(tile_layer.tileArray, width, height, stylesheet_path, tile_set.tileWidth, tile_set.tileHeight, OFF, tile_set.firstGID, 1, 1);
-
-			if(tile_layer.properties.contains("animated")) {
-				var tileset = tilesets["level"];
-				var special_tiles: Map<Int, TiledTilePropertySet> = new Map();
-				for(tile_prop in tileset.tileProps) {
-					if(tile_prop != null && tile_prop.animationFrames.length > 0) {
-						special_tiles[tile_prop.tileID + tileset.firstGID] = tile_prop;
+			for(tile_i => tile in tile_layer.tileArray) {
+				// its air anyways
+				if(tile == 0) continue;
+				// trace(tile, tile_i);
+				
+				var tileset: TiledTileSet = null; 
+				for(ts in tile_layer.map.tilesets) {
+					//ts pmo
+					// trace(tile >= ts.firstGID, tile < (ts.firstGID + ts.numTiles));
+					// trace(ts.firstGID, tile);
+					if(tile >= ts.firstGID && tile < (ts.firstGID + ts.numTiles)) {
+						tileset = ts;
+						break;
 					}
+					continue;
 				}
-				var tile_layer: TiledTileLayer = cast layer;
-				tilemap.setSpecialTiles([
-					for(tile in tile_layer.tiles)
-						if(tile != null && special_tiles.exists(tile.tileID))
-							get_animated_tile(special_tiles[tile.tileID], tileset)
+
+				var source_tileset: haxe.xml.Access = null;
+				for(ts in source.nodes.tileset) {
+					if(Std.parseInt(ts.att.firstgid) == tileset.firstGID) {
+						source_tileset = ts;
+						break;
+					}
+					continue;
+				}
+
+				if(tileset == null || source_tileset == null || tileset.imageSource == null) continue;
+				var tsx_path = new Path(source_tileset.att.source);
+				var image_path = new Path(tileset.imageSource);
+				var spritesheet_path = Path.join([Path.directory(Path.normalize(layer.map.rootPath + tsx_path)), image_path.file + "." + image_path.ext]);
+				
+				var tilemap: FlxTilemapExt = tilemaps.get(tileset.firstGID);
+				if(tilemap == null) {
+					tilemap = new FlxTilemapExt();
+					tilemap.loadMapFromArray([for(i in 0...(width * height)) 0], width, height, spritesheet_path, tileset.tileWidth, tileset.tileHeight, OFF, tileset.firstGID, 1, 1);
+				}
+				
+				tilemap.setTileIndex(tile_i, tile);
+				
+				// could be a regular FlxTilemap if there are no animated tiles
+				if(tile_layer.properties.contains("animated")) {
+					var tileset = tilesets["level"];
+					var special_tiles: Map<Int, TiledTilePropertySet> = new Map();
+					for(tile_prop in tileset.tileProps) {
+						if(tile_prop != null && tile_prop.animationFrames.length > 0) {
+							special_tiles[tile_prop.tileID + tileset.firstGID] = tile_prop;
+						}
+					}
+					var tile_layer: TiledTileLayer = cast layer;
+					tilemap.setSpecialTiles([
+						for(tile in tile_layer.tiles)
+							if(tile != null && special_tiles.exists(tile.tileID))
+								get_animated_tile(special_tiles[tile.tileID], tileset)
 						else
 							null
-				]);
+					]);
+				}
+				
+				if(
+					!tile_layer.properties.contains("cancollide") || 
+					tile_layer.properties.get("cancollide") == "true"
+				) {
+					collidable_tile_layers.push(tilemap);
+				}
+
+				tilemaps.set(tileset.firstGID, tilemap);
 			}
-
-			if(
-        !tile_layer.properties.contains("cancollide") || 
-        tile_layer.properties.get("cancollide") == "true"
-      ) {
-				collidable_tile_layers.push(tilemap);
-      }
-
-      if(tile_layer.properties.get("zone") == "front") {
-				foreground_tiles.add(tilemap);
-      } else {
-				background_layer.add(tilemap);
-      }
+				
+			for(tilemap in tilemaps) {
+				tiles.add(tilemap);
+			}
 		}
 		load_objects(state);
 	}
@@ -142,31 +159,39 @@ class TiledLevel extends TiledMap {
 
 			for(o in object_layer.objects) {
         load_object(state, o, object_layer, objects_layer);
-        load_image_object(layer, o, state);
+        load_collidable_object(layer, o, state);
 			}
 		}
 	}
 
-	function load_image_object(layer: TiledLayer, object: TiledObject, state: states.Game) {    
+	function load_collidable_object(layer: TiledLayer, object: TiledObject, state: states.Game) {    
     if(object.gid == -1) return;
 		
-		var owner: TiledTileSet = this.getGidOwner(object.gid);
-    if(owner == null) return;
+		var tileset: TiledTileSet = this.getGidOwner(object.gid);
 
-		var image_path = new Path(owner.imageSource);
-		var spritesheet_path = c_PATH_LEVEL_TILESHEETS + image_path.file + "." + image_path.ext;
+		var source_tileset: haxe.xml.Access = null;
+		for(ts in source.nodes.tileset) {
+			if(Std.parseInt(ts.att.firstgid) == tileset.firstGID) {
+				source_tileset = ts;
+				break;
+			}
+			continue;
+		}
 
-		trace(spritesheet_path);
-		
-    var rect = owner.getRect(object.gid);
+		if(tileset == null || source_tileset == null || tileset.imageSource == null) return;
+		var tsx_path = new Path(source_tileset.att.source);
+		var image_path = new Path(tileset.imageSource);
+		var spritesheet_path = Path.join([Path.directory(Path.normalize(layer.map.rootPath + tsx_path)), image_path.file + "." + image_path.ext]);
+
+    var rect = tileset.getRect(object.gid);
     if(rect == null) return;
 
-		var index = (object.gid - owner.firstGID);
+		var index = (object.gid - tileset.firstGID);
 
-		var tilesize = owner.tileWidth;
+		var tilesize = tileset.tileWidth;
 
-		var tilex = (index % owner.numRows) * tilesize;
-		var tiley = Math.floor(index / owner.numCols) * tilesize;
+		var tilex = (index % tileset.numRows) * tilesize;
+		var tiley = Math.floor(index / tileset.numCols) * tilesize;
 		var tile_image = Assets.getBitmapData(spritesheet_path);
 
     var sprite = new SpriteExt(object.x, object.y-object.height);
@@ -206,7 +231,7 @@ class TiledLevel extends TiledMap {
 			});
 		}
 
-    background_layer.add(sprite);
+    tiles.add(sprite);
 	}
 
 	function load_object(state:states.Game, o:TiledObject, g:TiledObjectLayer, group:FlxGroup) {
@@ -235,7 +260,7 @@ class TiledLevel extends TiledMap {
 			if(layer.type != TiledLayerType.IMAGE) continue;
 
 			var image: TiledImageLayer = cast layer;
-			var sprite = new FlxSprite(image.x, image.y, c_PATH_LEVEL_TILESHEETS + image.imagePath);
+			var sprite = new FlxSprite(image.x, image.y, layer.map.rootPath + image.imagePath);
 			images_layer.add(sprite);
 		}
 	}
@@ -263,5 +288,11 @@ class TiledLevel extends TiledMap {
 			return true;
 		}
 		return false;
+	}
+
+	public function get_object_by_id(id: String) {
+		for(object in objects_layer) {
+			object;
+		}
 	}
 }

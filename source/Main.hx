@@ -1,5 +1,6 @@
 package;
 
+import core.EventEmitter;
 import flixel.FlxG;
 import flixel.FlxGame;
 import flixel.FlxSprite;
