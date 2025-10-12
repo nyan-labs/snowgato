@@ -1,0 +1,7 @@
+var penis = Game.level.get_object(function(object) {
+  return object.name == "wowsecret";
+});
+
+penis.on_interact.add(function() {
+  trace("mmfgh");
+});

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="27" height="21" tilewidth="24" tileheight="24" infinite="0" nextlayerid="11" nextobjectid="25">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="27" height="21" tilewidth="24" tileheight="24" infinite="0" nextlayerid="12" nextobjectid="27">
  <tileset firstgid="1" source="../../spritesheets/level-bg.tsx"/>
  <tileset firstgid="65" source="../../spritesheets/level-fg.tsx"/>
  <layer id="1" name="background" width="27" height="21">
@@ -103,8 +103,11 @@
   </object>
   <object id="19" name="exitbutton" gid="68" x="600" y="48" width="24" height="24"/>
   <object id="23" name="exitbutton" gid="69" x="600" y="72" width="24" height="24"/>
+  <object id="25" x="480" y="24" width="87.7188" height="24.2969">
+   <text fontfamily="Minecraft" wrap="1" color="#ff15b9" halign="center">MAOW</text>
+  </object>
  </objectgroup>
- <objectgroup id="4" name="entities">
+ <objectgroup id="4" name="markers">
   <object id="2" name="player" type="player_start" x="24" y="48"/>
  </objectgroup>
 </map>

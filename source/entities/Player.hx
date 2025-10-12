@@ -6,10 +6,20 @@ import flixel.group.FlxGroup;
 import flixel.tile.FlxTilemap;
 import flixel.ui.FlxVirtualPad;
 import flixel.util.FlxCollision;
+import flixel.util.FlxSignal.FlxTypedSignal;
 import flixel.util.FlxSpriteUtil;
 import openfl.Memory;
 
+enum PlayerState {
+  NONE;
+
+  MENU;
+  DIALOG;
+}
+
 class Player extends FlxSprite {
+  public var state: PlayerState = NONE;
+
   public var can_move = true;
 
   public var walk_speed = 100;
@@ -18,6 +28,8 @@ class Player extends FlxSprite {
   public var speed = 0;
 
 	public var pad: FlxVirtualPad;
+
+  public final on_move = new FlxTypedSignal<Float->Void>();
 
   public function new() {
     super();
@@ -64,6 +76,14 @@ class Player extends FlxSprite {
   
   override public function update(elapsed:Float):Void {
     super.update(elapsed);
+
+    switch(state) {
+      case DIALOG:
+        can_move = false;
+      case NONE:
+        can_move = true;
+      default:
+    }
 
 		// if(FlxG.collide(collision, this)) return;
 
@@ -116,6 +136,10 @@ class Player extends FlxSprite {
       animation.play('walk-${direction}'); 
     } else {
       animation.play('idle-${direction}'); 
+    }
+
+    if(can_move && (velocity.x != 0 || velocity.y != 0)) {
+      on_move.dispatch(elapsed);
     }
     
     drag.set(speed*8, speed*8);

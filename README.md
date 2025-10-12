@@ -16,8 +16,7 @@ but i would appreciate if you followed these **code guidelines**:
 easier to differenciate and causes less conflicts
 
 for **levels**:
-* use the [Tiled editor](https://www.mapeditor.org/)\
-  or if you feel insane, manually edit the TXL/XML files :D
+* read `LEVELS.md`
 * not every single one will get approved!\
   **if** i decide to add a level browser, then this will be irrelevant
 

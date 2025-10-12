@@ -1,5 +1,7 @@
 package core;
 
+import core.TiledSpecialObject;
+import flixel.FlxBasic;
 import flixel.FlxCamera.FlxCameraFollowStyle;
 import flixel.FlxG;
 import flixel.FlxObject;
@@ -22,46 +24,66 @@ import flixel.math.FlxMath;
 import flixel.math.FlxPoint;
 import flixel.math.FlxRect;
 import flixel.math.FlxVelocity;
+import flixel.text.FlxText;
 import flixel.tile.FlxTile;
 import flixel.tile.FlxTilemap;
 import flixel.util.FlxCollision;
 import flixel.util.FlxSpriteUtil;
 import haxe.Timer;
 import haxe.io.Path;
+import haxe.xml.Access;
 import openfl.display.BitmapData;
 import openfl.utils.Assets;
 import utils.IsTouching.Touching;
 
+typedef ObjectLayer = FlxTypedGroup<TiledSpecialObject>;
+typedef MarkerLayer = FlxGroup;
+typedef CollidableTileLayer = Array<FlxTilemap>;
+typedef CollidableLayer = FlxTypedGroup<TiledSpecialObject>;
+typedef TextLayer = FlxTypedGroup<FlxText>;
 /**
  * @author Samuel Batista
  * @edit qzip
 */
 class TiledLevel extends TiledMapExt {
-	public var tiles: FlxGroup;
+	
+	public var collidable_tile_layers: CollidableTileLayer;
+	
+	public var collidable_layer: CollidableLayer;
+	
 	/** special objects that do a specific function depending on their `class`/`type`, doesn't follow a strict grid */
-	public var objects_layer: FlxGroup;
+	public var marker_layer: MarkerLayer;
 
-	public var collidable_tile_layers:Array<FlxTilemap>;
-	public var collidable_objects:FlxTypedGroup<SpriteExt>;
+	public var object_layer: ObjectLayer;
 
+	public var text_layer: TextLayer;
+
+	public var tiles: FlxGroup;
+	
 	/** images, doesn't follow a strict grid */
 	public var images_layer:FlxGroup;
 
 	public function new(tiled_level:FlxTiledMapAsset, state: states.Game) {
 		super(tiled_level);
-		tiles = new FlxGroup();
+		collidable_tile_layers = new Array();
+		collidable_layer = new FlxTypedGroup();
+		
+		marker_layer = new FlxGroup();
+		
+		object_layer = new FlxTypedGroup();
+		
+		text_layer = new FlxTypedGroup();
 
 		images_layer = new FlxGroup();
-		objects_layer = new FlxGroup();
-
-		collidable_tile_layers = new Array<FlxTilemap>();
-		collidable_objects = new FlxTypedGroup<SpriteExt>();
+		
+		tiles = new FlxGroup();
 
 		FlxG.camera.setScrollBoundsRect(0, 0, fullWidth, fullHeight, true);
 
 		load_images();
 
 		for(layer in layers) {
+			if(layer.type == TiledLayerType.GROUP) throw "groups are yet to be implemented. sorry!";
 			if(layer.type != TiledLayerType.TILE) continue;
 			var tile_layer: TiledTileLayer = cast layer;
 			
@@ -158,13 +180,39 @@ class TiledLevel extends TiledMapExt {
 			var object_layer: TiledObjectLayer = cast layer;
 
 			for(o in object_layer.objects) {
-        load_object(state, o, object_layer, objects_layer);
-        load_collidable_object(layer, o, state);
+				if(o.xmlData.hasNode.text) load_text(o);
+        load_marker(state, o, object_layer, marker_layer);
+        load_object(layer, o, state);
 			}
 		}
 	}
 
-	function load_collidable_object(layer: TiledLayer, object: TiledObject, state: states.Game) {    
+	function load_text(object: TiledObject) {    
+		var text_elem = object.xmlData.node.text;
+
+		var raw_text = text_elem.innerHTML;
+		var pixelsize = text_elem.has.pixelsize ? Std.parseInt(text_elem.att.pixelsize) : 8;
+		var color = text_elem.has.color ? Std.parseInt('0x${text_elem.att.color.split("#")[1]}') : 0xFFFFFF;
+
+		var valign = text_elem.has.valign ? text_elem.att.valign : "center"; // todo
+		var halign = text_elem.has.halign ? text_elem.att.halign : "left";
+
+		var text = new FlxText(object.x, object.y, object.width, raw_text, pixelsize);
+		text.color = color;
+
+		switch(halign) {
+			case "left": 
+				text.alignment = LEFT;
+			case "center": 
+				text.alignment = CENTER;
+			case "right": 
+				text.alignment = RIGHT;
+		}
+
+		text_layer.add(text);
+	}
+
+	function load_object(layer: TiledLayer, object: TiledObject, state: states.Game) {    
     if(object.gid == -1) return;
 		
 		var tileset: TiledTileSet = this.getGidOwner(object.gid);
@@ -194,7 +242,7 @@ class TiledLevel extends TiledMapExt {
 		var tiley = Math.floor(index / tileset.numCols) * tilesize;
 		var tile_image = Assets.getBitmapData(spritesheet_path);
 
-    var sprite = new SpriteExt(object.x, object.y-object.height);
+    var sprite = new TiledSpecialObject(object.x, object.y-object.height);
 		sprite.makeGraphic(24, 24, 0x00000000, true, 'tm${object.gid}');
 		sprite.pixels.copyPixels(tile_image, new openfl.geom.Rectangle(tilex, tiley, tilesize, tilesize), new openfl.geom.Point(0, 0));
 
@@ -213,38 +261,45 @@ class TiledLevel extends TiledMapExt {
     if(object.properties.contains("depth")) {
       var depth = Std.parseFloat(object.properties.get("depth"));
       sprite.scrollFactor.set(depth, depth);
-    }
+    } 
 
 		if(object.properties.get("cancollide") == "true") {
-			collidable_objects.add(sprite);
+			sprite.properties.set("cancollide", true);
+			collidable_layer.add(sprite);
 		}
 		if(object.properties.get("anchored") == "true") {
+			sprite.properties.set("anchored", true);
 			sprite.immovable = true;
+		}
+		if(object.name != null) {
+			sprite.name = object.name;
 		}
 		if(object.properties.contains("dialog")) {
 			var dialog_string = object.properties.get("dialog");
 			var dialog_array = dialog_string.split(";");
+			sprite.properties.set("dialog", dialog_array);
 
-			sprite.oninteract.add(function(_) {
+			sprite.on_interact.add(function(_) {
 				state.dialog.dialog = dialog_array;
 				state.dialog.start();
 			});
 		}
 
-    tiles.add(sprite);
+		object_layer.add(sprite);
 	}
 
-	function load_object(state:states.Game, o:TiledObject, g:TiledObjectLayer, group:FlxGroup) {
+	function load_marker(state:states.Game, o:TiledObject, g:TiledObjectLayer, group:MarkerLayer) {
 		var x:Int = o.x;
 		var y:Int = o.y;
 
 		// objects in tiled are aligned bottom-left (top-left in flixel)
 		if(o.gid != -1)
 			y -= g.map.getGidOwner(o.gid).tileHeight;
-
+		
+		
 		switch (o.type.toLowerCase()) {
 			case "player_start":
-        var player = new entities.Player();
+				var player = new entities.Player();
         player.setPosition(x, y);
 
         FlxG.camera.follow(player, FlxCameraFollowStyle.NO_DEAD_ZONE, 0.25);
@@ -265,14 +320,6 @@ class TiledLevel extends TiledMapExt {
 		}
 	}
 
-	public function get_touched_object(sprite: FlxSprite): Null<SpriteExt> {
-		for(object in collidable_objects) {
-			var touching = Touching.is_touching_sprite(object, sprite, 5.0, true);
-
-			if(touching) return object;
-		}
-		return null;
-	}
 	public function collide_with_level(obj: FlxObject, ?notifyCallback: FlxObject->FlxObject->Void, ?processCallback: FlxObject->FlxObject->Bool):Bool {
 		if(collidable_tile_layers == null)
 			return false;
@@ -284,15 +331,26 @@ class TiledLevel extends TiledMapExt {
 				return true;
 			}
 		}
-		if(FlxG.overlap(collidable_objects, obj, notifyCallback, processCallback != null ? processCallback : FlxObject.separate)) {
+		if(FlxG.overlap(collidable_layer, obj, notifyCallback, processCallback != null ? processCallback : FlxObject.separate)) {
 			return true;
 		}
 		return false;
 	}
 
-	public function get_object_by_id(id: String) {
-		for(object in objects_layer) {
-			object;
+	public function get_object(callback: FlxBasic->Bool): Null<TiledSpecialObject> {
+		for(object in object_layer) {
+			if(callback(object)) {
+				return object;
+			} else continue;
 		}
+		return null;
+	}
+	public function get_sprite_touching_object(sprite: FlxSprite): Null<TiledSpecialObject> {
+		for(object in collidable_layer) {
+			var touching = Touching.is_touching_sprite(object, sprite, 5.0, true);
+
+			if(touching) return object;
+		}
+		return null;
 	}
 }
