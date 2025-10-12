@@ -71,7 +71,7 @@ class Player extends FlxSprite {
       ? pad.getButton(A).justPressed || FlxG.keys.anyJustPressed([SPACE, Z])
       : pad.getButton(A).pressed || FlxG.keys.anyPressed([SPACE, Z]);
 
-    return interact;
+    return state != DIALOG && interact;
   }
   
   override public function update(elapsed:Float):Void {

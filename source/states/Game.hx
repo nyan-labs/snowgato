@@ -98,11 +98,17 @@ class Game extends FlxState {
 		level.collide_with_level(player);
 
     if(player != null) {
-      var object = level.get_sprite_touching_object(player);
-      if(object != null) {
-        if(player.can_interact(true)) {
-          object.on_interact.dispatch(elapsed);
+      {
+        var object = level.get_sprite_touching_object(player);
+        if(object != null) {
+          if(player.can_interact(true)) {
+            object.on_interact.dispatch(elapsed);
+          }
         }
+      }
+      {
+        var object = level.get_sprite_on_object(player);
+        if(object != null) object.on_step.dispatch(elapsed);
       }
     }
   }

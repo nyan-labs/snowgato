@@ -353,4 +353,12 @@ class TiledLevel extends TiledMapExt {
 		}
 		return null;
 	}
+	public function get_sprite_on_object(sprite: FlxSprite): Null<TiledSpecialObject> {
+		for(object in object_layer) {
+			var overlaping = FlxG.overlap(object, sprite);
+
+			if(overlaping) return object;
+		}
+		return null;
+	}
 }
