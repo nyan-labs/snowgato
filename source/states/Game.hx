@@ -13,6 +13,7 @@ import flixel.tile.FlxTilemap;
 import flixel.tweens.FlxTween;
 import flixel.ui.FlxVirtualPad;
 import flixel.util.FlxSignal.FlxTypedSignal;
+import haxe.EnumTools;
 import ui.ButtonPrimary;
 import ui.DialogMessage;
 import ui.DirectionalLayout;
@@ -49,6 +50,11 @@ class Game extends FlxState {
 		interp.variables.set("Math", Math);
 		interp.variables.set("Std", Std);
 		interp.variables.set("Game", this);
+		interp.variables.set("Enum", {
+      get: function(e) {
+        return Std.string(e);
+      }
+    });
 
 		var ast = parser.parseString(script);
 
@@ -76,9 +82,9 @@ class Game extends FlxState {
 
     add(HUD);
 
-    #if mobile
+    // #if mobile
 		add(player.pad);
-    #end
+    // #end
 
     dialog = new DialogMessage();
     dialog.onvisible.add(function() {

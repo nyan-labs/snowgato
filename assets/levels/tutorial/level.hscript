@@ -1,7 +1,17 @@
-var penis = Game.level.get_object(function(object) {
-  return object.name == "exitbutton";
+var exit_buttons = Game.level.get_objects(function(o) o.name == "exitbutton");
+
+var door = Game.level.get_object(function(o) o.name == "door");
+door.properties.set("open", false);
+door.properties.signal("open").add(function(access) {
+  switch(Enum.get(access)) {
+    case "WRITE":
+      door.tiled_swap_tile(6); // todo: enum for each individual GID tile
+      trace('i open');
+  }
 });
 
-penis.on_step.add(function() {
-  trace("mmfgh");
-});
+for(exit_button in exit_buttons) {
+  exit_button.on_step.add(function() {
+    door.properties.set("open", true);
+  });
+}

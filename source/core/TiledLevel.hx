@@ -234,28 +234,13 @@ class TiledLevel extends TiledMapExt {
     var rect = tileset.getRect(object.gid);
     if(rect == null) return;
 
-		var index = (object.gid - tileset.firstGID);
-
-		var tilesize = tileset.tileWidth;
-
-		var tilex = (index % tileset.numRows) * tilesize;
-		var tiley = Math.floor(index / tileset.numCols) * tilesize;
-		var tile_image = Assets.getBitmapData(spritesheet_path);
-
-    var sprite = new TiledSpecialObject(object.x, object.y-object.height);
-		sprite.makeGraphic(24, 24, 0x00000000, true, 'tm${object.gid}');
-		sprite.pixels.copyPixels(tile_image, new openfl.geom.Rectangle(tilex, tiley, tilesize, tilesize), new openfl.geom.Point(0, 0));
-
-		sprite.setGraphicSize(object.width, object.height);
-		sprite.setSize(object.width, object.height);
-		sprite.offset.x = -(object.width/2 - tilesize/2);
-		sprite.offset.y = -(object.height/2 - tilesize/2);
+		var sprite = new TiledSpecialObject(spritesheet_path, tileset, object);
+		sprite.loadGraphic_from_tiled_object();
 
     if(object.flippedHorizontally) sprite.flipX = true;
     if(object.flippedVertically) sprite.flipY = true;
     if(object.angle != 0) {
       sprite.angle = object.angle;
-      sprite.antialiasing = true;
     }
 
     if(object.properties.contains("depth")) {
@@ -345,6 +330,16 @@ class TiledLevel extends TiledMapExt {
 		}
 		return null;
 	}
+	public function get_objects(callback: FlxBasic->Bool): Array<TiledSpecialObject> {
+		var accum: Array<TiledSpecialObject> = new Array();
+		for(object in object_layer) {
+			if(callback(object)) {
+				accum.push(object);
+			} else continue;
+		}
+		return accum;
+	}
+
 	public function get_sprite_touching_object(sprite: FlxSprite): Null<TiledSpecialObject> {
 		for(object in collidable_layer) {
 			var touching = Touching.is_touching_sprite(object, sprite, 5.0, true);
