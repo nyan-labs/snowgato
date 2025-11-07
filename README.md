@@ -21,3 +21,6 @@ for **levels**:
   **if** i decide to add a level browser, then this will be irrelevant
 
 don't commit random README.md changes though
+
+# credits
+big thanks to CodenameCrew's [hscript-improved](https://github.com/CodenameCrew/hscript-improved) for adding support to class, enum, etc.

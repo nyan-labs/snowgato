@@ -1,5 +1,7 @@
 package states;
 
+import core.Controls;
+import core.StateExt;
 import flixel.FlxBasic;
 import flixel.FlxG;
 import flixel.FlxState;
@@ -8,9 +10,10 @@ import flixel.sound.FlxSound;
 import flixel.text.FlxText.FlxTextFormat;
 import flixel.text.FlxText.FlxTextFormatMarkerPair;
 import flixel.util.FlxColor;
-import ui.DirectionalLayout;
+import ui.ButtonPrimary;
 
-class MainMenu extends FlxState {
+class MainMenu extends StateExt {
+
 	override public function create() {
 		super.create();
 
@@ -25,24 +28,22 @@ class MainMenu extends FlxState {
 		
 		add(text);
 
-		var list = new DirectionalLayout();
-		list.x = 20;
-		list.y = Math.round(text.height) + 5;
-		list.gap = 1;
+		var gapping = 5;
 
-		var start_button = new ui.ButtonPrimary(0, 0, "start", function() {
-			switch_state(states.Game);
+		var start_button = new ButtonPrimary(text.x, text.y + text.height + gapping, "start", function() {
+			switch_state(states.LevelSelect);
 		});
+		focus.add(start_button, true);
 
-		list.add(start_button);
-
-		var settings_button = new ui.ButtonPrimary(0, 0, "settings", function() {
-			switch_substate(states.MainMenuSettings);
+		var level_editor_button = new ButtonPrimary(start_button.x, start_button.y + start_button.height + gapping, "level editor", function() {
+			switch_state(states.LevelEditor);
 		});
+		focus.add(level_editor_button);
 
-		list.add(settings_button);
-
-		add(list);
+		var settings_button = new ButtonPrimary(level_editor_button.x, level_editor_button.y + level_editor_button.height + gapping, "settings", function() {
+			switch_substate(states.substates.Settings);
+		});
+		focus.add(settings_button);
 
 		var credit = new flixel.text.FlxText(-4, -4, 0, "nyanlabs 2025", 8);
 		credit.x += FlxG.width - credit.width;
@@ -59,9 +60,9 @@ class MainMenu extends FlxState {
 	}
 
 	function switch_state(state: Class<FlxState>) {
-		FlxG.camera.fade(FlxColor.BLACK, 0.5, false, function() {
+		// FlxG.camera.fade(FlxColor.BLACK, 0.5, false, function() {
 			FlxG.switchState(function () { return Type.createInstance(state, []); });
-		});
+		// });
 	}
 	function switch_substate(state: Class<FlxSubState>) {
 		openSubState(Type.createInstance(state, []));

@@ -1,0 +1,51 @@
+{
+  "type": "tilemap",
+  "name": "tutorial",
+  "script": "./Level.hxs",
+  "properties": {
+  },
+
+  "columns": 4,
+  "rows": 4,
+  "width": 24,
+  "height": 24,
+
+  "tilesets": [
+    "../../../assets/images/tiles/tileset.json"
+  ],
+
+  "flags": [
+    {
+      "id": "player",
+      "type": "FlagPlayer",
+      "x": 24,
+      "y": 24
+    }
+  ],
+
+  "entities": [
+    {
+      "id": "you",
+      "type": "peni",
+      "width": 24,
+      "height": 48,
+      "x": 0,
+      "y": 0,
+      "collide": false
+    }
+  ],
+
+  "layers": [
+    {
+      "order": 1,
+      "name": "penis sucking 200",
+      "collide": true,
+      "tiles": [
+        ["@:air", "@:air", "@:air", "@:air"],
+        ["@:air", "@:sign", "@:air", "@:air"],
+        ["@:snow", "@:air", "@:air", "@:air"],
+        ["@:air", "@:snow", "@:air",  "@:air"]
+      ]
+    }
+  ]
+}

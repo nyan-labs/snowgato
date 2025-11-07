@@ -1,5 +1,6 @@
 package ui;
 
+import core.Controls;
 import core.TypeTextExt;
 import flixel.FlxG;
 import flixel.FlxSprite;
@@ -9,13 +10,15 @@ import flixel.text.FlxText;
 import flixel.util.FlxSignal;
 import flixel.util.FlxTimer;
 
+// move to top on mobile/withvirtualpad!!
 class DialogMessage extends FlxSpriteGroup {
   public var dialog: Array<String> = [];
   public var index: Int = 0;
   
   public var text: TypeTextExt;
-  public var text_typing: Bool;
+
   public var text_finished: Bool;
+  public var debounce: Bool;
 
   public var onvisible = new FlxSignal();
 
@@ -37,11 +40,8 @@ class DialogMessage extends FlxSpriteGroup {
     add(bg);
 
     text = new TypeTextExt(0, 0, -1, "");
-    text.skipKeys = [X];
+    text.skipKeys = []; // we will not use this, only our own
     text.autoErase = false;
-    text.completeCallback = function() {
-      text_typing = false;
-    };
 
     add(text);
 
@@ -52,14 +52,15 @@ class DialogMessage extends FlxSpriteGroup {
   public function end(clear: Bool = true) {
     visible = false;
     // little debounce
-    FlxTimer.wait(0.2, function() {
-      text_finished = true;
-    });
+    text_finished = true;
+    FlxTimer.wait(0.25, function() debounce = false);
     
     onvisible.dispatch();
 
     if(clear) dialog = [];
   }
+
+  public function skip() { text.skip(); }
 
   // add reading the dialog and processing it,
   // (delay:100) for 100ms delay
@@ -72,7 +73,6 @@ class DialogMessage extends FlxSpriteGroup {
     text_finished = false;
     index += 1;
     text.applyMarkup(dialog[index], text.rules);
-    text_typing = true;
     text.start();
     
     return false;
@@ -80,8 +80,10 @@ class DialogMessage extends FlxSpriteGroup {
 
   public function start() {
     if(!text_finished) return false;
+    if(debounce) return false;
     if(dialog.length == 0) return false;
 
+    debounce = true;
     visible = true;
     index = -1;
 
@@ -96,8 +98,11 @@ class DialogMessage extends FlxSpriteGroup {
   override public function update(elapsed: Float) {
     super.update(elapsed);
 
-    //actual stuf
-    if(index != -1 && FlxG.keys.justPressed.Z && !text_typing && !text_finished) {
+    if(index != -1 && Controls.button.just_pressed.B) {
+      skip();
+    }
+
+    if(index != -1 && Controls.button.just_pressed.A && !text.typing && !text_finished) {
       next();
     }
   }

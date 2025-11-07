@@ -7,6 +7,11 @@ import flixel.util.FlxColor;
 import openfl.text.TextFormat;
 
 class TypeTextExt extends FlxTypeText {
+  public var typing(get, never): Bool;
+  inline function get_typing() {
+    return _typing;
+  }
+
   public var rules: Array<FlxTextFormatMarkerPair>;
 	override public function new(X:Float, Y:Float, Width:Int, Text:String, Size:Int = 8, EmbeddedFont:Bool = true) {
     super(X, Y, Width, Text, Size, EmbeddedFont);

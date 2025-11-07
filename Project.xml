@@ -4,7 +4,7 @@
 
 	<!-- _________________________ Application Settings _________________________ -->
 	
-	<app title="snowgato" file="snowgato" main="Main" version="0.0.1" company="nyanlabs" />
+	<app title="snowgato" file="snowgato" main="Main" version="0.1.0-alpha" company="nyanlabs" />
 
 	<!--The flixel preloader is not accurate in Chrome. You can use it regularly if you embed the swf into a html file
 		or you can set the actual size of your file manually at "FlxPreloaderBase-onUpdate-bytesTotal"-->
@@ -47,6 +47,9 @@
 
 	<!--In case you want to use nape with flixel-->
 	<!--<haxelib name="nape-haxe4" />-->
+	
+	<haxelib name="hscript-improved" />
+	<define name="CUSTOM_CLASSES" />
 
 	<!-- ______________________________ Haxedefines _____________________________ -->
 
@@ -86,6 +89,9 @@
 	<!-- Haxe 4.3.0+: Enable pretty syntax errors and stuff. -->
 	<!-- pretty (haxeflixel default), indent, classic (haxe compiler default) -->
 	<haxedef name="message.reporting" value="pretty" />
+	
+	<!-- these warnings i can't do anything about as they're from the libraries themselves.. -->
+	<haxeflag name="-D no-deprecation-warnings" />
 
 	<!-- _________________________________ Custom _______________________________ -->
 

@@ -1,0 +1,5 @@
+function create() {
+  var test = tilemap.entities["hellooooo"];
+
+  // and stuff
+}
